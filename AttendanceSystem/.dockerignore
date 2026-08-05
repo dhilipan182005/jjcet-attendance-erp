@@ -1,0 +1,13 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!target/*.jar
+*pom.xml.versionsBackup
+frontend/
+node_modules/
+.git/
+.github/
+.idea/
+*.iml
+.mvn/
+mvnw
+mvnw.cmd

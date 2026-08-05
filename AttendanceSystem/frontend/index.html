@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JJCET ERP</title>
+</head>
+<body>
+    <script type="module">
+        import { redirectBasedOnRole } from './js/auth.js';
+        
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+
+        if (token && role) {
+            redirectBasedOnRole(role);
+        } else {
+            window.location.href = '/login.html';
+        }
+    </script>
+</body>
+</html>

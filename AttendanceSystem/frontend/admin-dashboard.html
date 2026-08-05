@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - JJCET ERP</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script type="module">
+        import { checkAuthorization, validateSession } from './js/authGuard.js';
+        checkAuthorization(['ADMIN']);
+        validateSession();
+    </script>
+    <script src="assets/vendor/chart.min.js"></script>
+    <style>
+        .shortage-alert {
+            background-color: var(--error-color) !important;
+            color: white !important;
+        }
+
+        .shortage-alert .stat-value {
+            color: white !important;
+        }
+    </style>
+    
+    <script src="assets/vendor/jspdf.umd.min.js"></script>
+    <script src="assets/vendor/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body class="dashboard-layout">
+    <div id="app-loading-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background-color:#ffffff; z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+        <div class="skeleton-loader" style="width: 60px; height: 60px; border-radius: 50%; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); animation: spin 1s linear infinite; background: transparent;"></div>
+        <h3 style="margin-top:20px; font-family: 'Inter', sans-serif; color: var(--text-primary);">Initializing Admin Portal...</h3>
+    </div>
+    <div id="app-failure-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background-color:#ffffff; z-index:9999; display:none; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
+        <h3 style="color: var(--error-color);">Unable to initialize the Admin Portal.</h3>
+        <p style="margin-top: 10px; color: var(--text-secondary);">Please refresh and try again.</p>
+        <button onclick="window.location.reload()" class="btn btn-primary" style="margin-top: 20px;">Refresh</button>
+    </div>
+
+    <style>
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+
+    <header class="dashboard-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <button id="sidebar-toggle" class="sidebar-toggle-btn" aria-label="Toggle Sidebar" onclick="document.querySelector('.dashboard-sidebar').classList.toggle('sidebar-open')">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="header-brand">JJCET Admin Portal</div>
+        </div>
+        <div class="header-nav">
+            <span class="user-info" id="user-info-display"></span>
+            <button class="btn-logout" id="btn-logout" aria-label="btn logout">Logout</button>
+        </div>
+    </header>
+
+    <div class="dashboard-body">
+
+        <nav class="dashboard-sidebar">
+            <ul class="sidebar-nav" id="sidebar-menu">
+                <li><a href="#analytics-center" class="active">Analytics Center</a></li>
+                <li><a href="#manage-students">Register Student</a></li>
+                <li><a href="#import-students">Import Students</a></li>
+                <li><a href="#manage-teachers">Register Teacher</a></li>
+                <li><a href="#manage-departments">Manage Departments</a></li>
+                <li><a href="#manage-batches">Manage Batches</a></li>
+                <li><a href="#unlock-sessions">Lock/Unlock Sessions</a></li>
+                <li><a href="#attendance-reports">Attendance & Reports</a></li>
+                <li><a href="#audit-logs">Audit Logs</a></li>
+            </ul>
+        </nav>
+
+        <main class="dashboard-content">
+            <h1 class="page-title" id="page-title-text">Analytics Center</h1>
+
+            <section id="analytics-center" class="tab-content">
+                <div class="card"
+                    style="margin-bottom: var(--spacing-md); background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                    <div class="card-body"
+                        style="display: flex; gap: var(--spacing-sm); align-items: flex-end; flex-wrap: wrap; padding: 15px;">
+                        <div class="form-group mb-0" style="flex: 1; min-width: 150px;">
+                            <label for="analytics-date-range" style="font-weight: 500; font-size: 14px;">Date
+                                Range</label>
+                            <select id="analytics-date-range" class="form-control" aria-label="analytics date range">
+                                <option value="TODAY" selected>Today</option>
+                                <option value="THIS_WEEK">This Week</option>
+                                <option value="THIS_MONTH">This Month</option>
+                                <option value="LAST_MONTH">Last Month</option>
+                                <option value="CUSTOM">Custom Range</option>
+                                <option value="ALL_TIME">All Time</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0 custom-date-group hidden"
+                            style="flex: 1; min-width: 140px; display: none;" id="custom-date-start-group">
+                            <label for="analytics-start-date" style="font-weight: 500; font-size: 14px;">Start
+                                Date</label>
+                            <input type="date" id="analytics-start-date" class="form-control" aria-label="analytics start date">
+                        </div>
+                        <div class="form-group mb-0 custom-date-group hidden"
+                            style="flex: 1; min-width: 140px; display: none;" id="custom-date-end-group">
+                            <label for="analytics-end-date" style="font-weight: 500; font-size: 14px;">End Date</label>
+                            <input type="date" id="analytics-end-date" class="form-control" aria-label="analytics end date">
+                        </div>
+                        <div class="form-group mb-0" style="flex: 1; min-width: 120px;">
+                            <label for="analytics-year-filter" style="font-weight: 500; font-size: 14px;">Academic
+                                Year</label>
+                            <select id="analytics-year-filter" class="form-control" aria-label="analytics year filter">
+                                <option value="">All Years</option>
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3">3rd Year</option>
+                                <option value="4">4th Year</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0" style="flex: 1; min-width: 150px;">
+                            <label for="analytics-dept-filter"
+                                style="font-weight: 500; font-size: 14px;">Department</label>
+                            <select id="analytics-dept-filter" class="form-control" aria-label="analytics dept filter">
+                                <option value="">All Depts</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0" style="flex: 1; min-width: 150px;">
+                            <label for="analytics-batch-filter" style="font-weight: 500; font-size: 14px;">Batch</label>
+                            <select id="analytics-batch-filter" class="form-control" aria-label="analytics batch filter">
+                                <option value="">All Batches</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0" style="flex: 1; min-width: 140px;">
+                            <label for="analytics-session-filter" style="font-weight: 500; font-size: 14px;">Session</label>
+                            <select id="analytics-session-filter" class="form-control" aria-label="analytics session filter">
+                                <option value="" selected>All Sessions</option>
+                                <option value="FN">Forenoon (FN)</option>
+                                <option value="AN">Afternoon (AN)</option>
+                                <option value="EN">Evening (EN)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Overall Attendance Overview</div>
+                    <div class="card-body">
+                        <div class="stats-grid">
+                            <div class="stat-box" style="border-color: var(--primary-color);">
+                                <div class="stat-label" style="color: var(--primary-color);">Attendance Percentage</div>
+                                <div class="stat-value" id="stats-attendance-percent">0.00%</div>
+                            </div>
+                            <div class="stat-box" style="border-color: var(--success-color);">
+                                <div class="stat-label" style="color: var(--success-color);">Present Today</div>
+                                <div class="stat-value" id="stats-today-present">0 / 0</div>
+                            </div>
+                            <div class="stat-box" style="border-color: var(--error-color);">
+                                <div class="stat-label" style="color: var(--error-color);">Absent Today</div>
+                                <div class="stat-value" id="stats-today-absent">0 / 0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <div
+                    style="display: grid; grid-template-columns: 1fr; gap: var(--spacing-lg); margin-bottom: var(--spacing-lg);">
+                    <div class="card">
+                        <div class="card-header">Department Analytics</div>
+                        <div class="card-body">
+                            <table class="table" id="dept-analytics-table">
+                                <thead>
+                                    <tr>
+                                        <th>Department</th>
+                                        <th>Students</th>
+                                        <th>Present Today</th>
+                                        <th>Absent Today</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="4" class="text-center">Loading departments…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    style="display: grid; grid-template-columns: 1fr; gap: var(--spacing-lg); margin-bottom: var(--spacing-lg);">
+                    <div class="card">
+                        <div class="card-header">Training Batch Analytics</div>
+                        <div class="card-body">
+                            <table class="table" id="batch-analytics-table">
+                                <thead>
+                                    <tr>
+                                        <th>Batch</th>
+                                        <th>Students</th>
+                                        <th>Present Today</th>
+                                        <th>Absent Today</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="4" class="text-center">Loading batches…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg); margin-bottom: var(--spacing-lg);"
+                    id="visual-charts-grid">
+                    <div class="card">
+                        <div class="card-header">Today's Attendance Breakout (Pie)</div>
+                        <div class="card-body"
+                            style="position: relative; height: 280px; display: flex; justify-content: center; align-items: center;">
+                            <canvas id="todayAttendancePieChart" style="max-height: 250px; max-width: 250px;"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">Department Attendance Comparison (Bar)</div>
+                        <div class="card-body"
+                            style="position: relative; height: 280px; display: flex; justify-content: center; align-items: center;">
+                            <canvas id="departmentBarChart" style="max-height: 250px; max-width: 100%;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);"
+                    id="responsive-grid-analytics">
+                    <div class="card">
+                        <div class="card-header">Daily Session Analysis</div>
+                        <div class="card-body">
+                            <table class="table" id="session-analytics-table">
+                                <thead>
+                                    <tr>
+                                        <th>Session</th>
+                                        <th>Present</th>
+                                        <th>Absent</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="5" class="text-center">Loading sessions…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">Weekly Trend Tracker</div>
+                        <div class="card-body" style="position: relative; height:280px;">
+                            <canvas id="weeklyTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="manage-students" class="card tab-content hidden">
+                <div class="card-header">Register New Student</div>
+                <div class="card-body">
+                    <div id="student-message" class="hidden"></div>
+                    <form id="student-form">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);"
+                            id="responsive-grid-student-form">
+                            <div class="form-group">
+                                <label for="s-name">Full Name <span style="color: red;">*</span></label>
+                                <input type="text" id="s-name" class="form-control" required aria-label="s name">
+                            </div>
+                            <div class="form-group">
+                                <label for="s-register-number">Register Number <span style="color: red;">*</span></label>
+                                <input type="text" id="s-register-number" class="form-control" required aria-label="s register number">
+                            </div>
+                            <div class="form-group">
+                                <label for="s-dept">Department <span style="color: red;">*</span></label>
+                                <select id="s-dept" class="form-control" required aria-label="s dept">
+                                    <option value="">Select Department</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="s-year">Year <span style="color: red;">*</span></label>
+                                <input type="number" id="s-year" class="form-control" min="1" max="5" required aria-label="s year">
+                            </div>
+                            <div class="form-group">
+                                <label for="s-batch">Batch <span style="color: red;">*</span></label>
+                                <select id="s-batch" class="form-control" required aria-label="s batch">
+                                    <option value="">Select Batch</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="s-type">Student Type <span style="color: red;">*</span></label>
+                                <select id="s-type" class="form-control" required aria-label="s type">
+                                    <option value="DAY_SCHOLAR">Day Scholar</option>
+                                    <option value="HOSTEL">Hostel</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="s-evening-group">
+                                <label for="s-evening">Evening Class Access <span style="color: red;">*</span></label>
+                                <select id="s-evening" class="form-control" required aria-label="s evening">
+                                    <option value="NO">NO</option>
+                                    <option value="YES">YES</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-2" aria-label="button">Create Student</button>
+                    </form>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-header"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Students List</span>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <input type="text" id="students-search" class="form-control" placeholder="Search name or reg no..." style="width: 200px; padding: 4px; font-size: 14px;" onkeyup="if(event.key === 'Enter') loadStudentsCRUD()" aria-label="Search name or reg no...">
+                            <select id="students-dept-filter" class="form-control"
+                                style="width: auto; padding: 4px; font-size: 14px;" aria-label="students dept filter">
+                                <option value="">All Depts</option>
+                            </select>
+                            <select id="students-batch-filter" class="form-control"
+                                style="width: auto; padding: 4px; font-size: 14px;" aria-label="students batch filter">
+                                <option value="">All Batches</option>
+                            </select>
+                            <select id="students-year-filter" class="form-control"
+                                style="width: auto; padding: 4px; font-size: 14px;" aria-label="students year filter">
+                                <option value="">All Years</option>
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3">3rd Year</option>
+                                <option value="4">4th Year</option>
+                            </select>
+                            <select id="students-evening-filter" class="form-control"
+                                style="width: auto; padding: 4px; font-size: 14px;" aria-label="students evening filter">
+                                <option value="">All Evening Access</option>
+                                <option value="true">Evening Enabled</option>
+                                <option value="false">Evening Disabled</option>
+                            </select>
+                            <select id="students-filter" class="form-control"
+                                style="width: auto; padding: 4px; font-size: 14px;" aria-label="students filter">
+                                <option value="ACTIVE">Active</option>
+                                <option value="ARCHIVED">Archived</option>
+                                <option value="ALL">All</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <table class="table serial-table" id="students-crud-table">
+                            <thead>
+                                <tr>
+                                    <th>S.No</th>
+                                    <th>Name</th>
+                                    <th>Register No</th>
+                                    <th>Dept</th>
+                                    <th>Batch</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="6" class="text-center">Loading students…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="import-students" class="card tab-content hidden">
+                <div class="card-header">Import Students</div>
+                <div class="card-body">
+                    <p style="color: var(--text-muted, #64748b); margin-bottom: var(--spacing-md);">
+                        Add many students at once from a CSV file. Batch and Department are worked out
+                        automatically from each student's Register Number.
+                    </p>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: var(--spacing-md);">
+                        <a id="csv-template-link" href="#" class="btn" style="background-color: var(--secondary-color, #64748b); color: white;">Download CSV Template</a>
+                        <input type="file" id="csv-file-input" accept=".csv" class="form-control" style="max-width: 320px;" aria-label="Select CSV file">
+                        <button type="button" id="csv-preview-btn" class="btn btn-primary">Check File</button>
+                    </div>
+                    <div id="csv-import-message" class="hidden"></div>
+
+                    <div id="csv-preview-panel" class="hidden" style="margin-top: var(--spacing-md);">
+                        <div class="card" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                            <div class="card-body" id="csv-summary-cards"
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+                            </div>
+                        </div>
+
+                        <div style="max-height: 320px; overflow-y: auto; margin-top: var(--spacing-md);">
+                            <table class="table" style="width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th>Row</th>
+                                        <th>Register Number</th>
+                                        <th>Student Name</th>
+                                        <th>Department</th>
+                                        <th>Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="csv-preview-rows"></tbody>
+                            </table>
+                        </div>
+
+                        <button type="button" id="csv-confirm-btn" class="btn btn-primary mt-2">Import Students</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="manage-teachers" class="card tab-content hidden">
+                <div class="card-header">Register New Teacher</div>
+                <div class="card-body">
+                    <div id="teacher-message" class="hidden"></div>
+                    <form id="teacher-form">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);"
+                            id="responsive-grid-teacher-form">
+                            <div class="form-group">
+                                <label for="t-name">Full Name <span style="color: red;">*</span></label>
+                                <input type="text" id="t-name" class="form-control" required aria-label="t name">
+                            </div>
+                            <div class="form-group">
+                                <label for="t-userId">Official Email ID <span style="color: red;">*</span></label>
+                                <input type="email" id="t-userId" class="form-control" placeholder="e.g. teachername@jjcet.ac.in" required aria-label="e.g. teachername@jjcet.ac.in">
+                            </div>
+                            <div class="form-group">
+                                <label for="t-emp-id">Employee ID</label>
+                                <input type="text" id="t-emp-id" class="form-control" aria-label="t emp id">
+                            </div>
+                            <div class="form-group">
+                                <label for="t-access-type">Access Type <span style="color: red;">*</span></label>
+                                <select id="t-access-type" class="form-control" required aria-label="t access type">
+                                    <option value="TEACHER">TEACHER</option>
+                                    <option value="ADMIN">ADMIN</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="t-dept">Department</label>
+                                <select id="t-dept" class="form-control" aria-label="t department">
+                                    <option value="">No department yet</option>
+                                </select>
+                            </div>
+                                  <div class="form-group" style="position: relative;">
+                                      <label for="t-password">Password <span style="color: red;">*</span></label>
+                                      <div class="password-input-wrapper" style="position: relative; display: flex; align-items: center;">
+                                          <input type="password" id="t-password" class="form-control" required style="padding-right: 40px; width: 100%;" aria-label="t password">
+                                          <button type="button" id="toggle-t-password" class="btn-icon" aria-label="Toggle password visibility" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; padding: 0;">
+                                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width: 20px; height: 20px;">
+                                                  <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+                                                  <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clip-rule="evenodd" />
+                                              </svg>
+                                          </button>
+                                      </div>
+                                <div class="password-strength-meter mt-1">
+                                    <div id="pwd-strength-bar" style="height: 4px; width: 0%; background-color: #ccc; transition: all 0.3s;"></div>
+                                    <small id="pwd-strength-text" style="color: var(--text-secondary); font-size: 11px; display: block; margin-top: 4px;">Minimum 12 chars (Upper, Lower, Number, Special)</small>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-2" aria-label="button">Create Teacher</button>
+                    </form>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-header"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Teachers List</span>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <input type="text" id="teachers-search" class="form-control" placeholder="Search name or emp id..." style="width: 200px; padding: 4px; font-size: 14px;" onkeyup="if(event.key === 'Enter') loadTeachersCRUD()" aria-label="Search name or emp id...">
+
+                            <select id="teachers-access-filter" class="form-control"
+                                style="width: auto; padding: 4px; font-size: 14px;" aria-label="teachers access filter">
+                                <option value="">All Roles</option>
+                                <option value="TEACHER">Teacher</option>
+                                <option value="ADMIN">Admin</option>
+                            </select>
+                            <select id="teachers-filter" class="form-control"
+                                style="width: auto; padding: 4px; font-size: 14px;" aria-label="teachers filter">
+                                <option value="ACTIVE">Active</option>
+                                <option value="ARCHIVED">Archived</option>
+                                <option value="ALL">All</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <table class="table serial-table" id="teachers-crud-table">
+                            <thead>
+                                <tr>
+                                    <th>S.No</th>
+                                    <th>Name</th>
+                                    <th>Emp ID</th>
+                                    <th>Access Role</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" class="text-center">Loading teachers…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="manage-departments" class="tab-content hidden">
+                <div class="card">
+                    <div class="card-header">Add New Department</div>
+                    <div class="card-body">
+                        <div id="dept-message" class="hidden"></div>
+                        <form id="dept-add-form" style="display: flex; gap: var(--spacing-md); flex-wrap: wrap;">
+                            <input type="text" id="new-dept-name" class="form-control"
+                                placeholder="Department Name (e.g. CSE)" required style="flex: 2; min-width: 200px;" aria-label="Department Name">
+                            <input type="text" id="new-dept-code" class="form-control"
+                                placeholder="Department Code (e.g. 104)" required style="flex: 1; min-width: 100px;" aria-label="Department Code">
+                            <button type="submit" class="btn btn-primary" aria-label="button">Add Department</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Departments List</span>
+                        <select id="departments-filter" class="form-control"
+                            style="width: auto; padding: 4px; font-size: 14px;" aria-label="departments filter">
+                            <option value="ACTIVE">Active</option>
+                            <option value="ARCHIVED">Archived</option>
+                            <option value="ALL">All</option>
+                        </select>
+                    </div>
+                    <div class="card-body">
+                        <table class="table serial-table" id="departments-crud-table">
+                            <thead>
+                                <tr>
+                                    <th>S.No</th>
+                                    <th>Name</th>
+                                    <th>Code</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center">Loading departments…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="manage-batches" class="tab-content hidden">
+                <div class="card">
+                    <div class="card-header">Add New Batch</div>
+                    <div class="card-body">
+                        <div id="batch-message" class="hidden"></div>
+                        <form id="batch-add-form" style="display: flex; gap: var(--spacing-md);">
+                            <input type="text" id="new-batch-name" class="form-control"
+                                placeholder="Batch Name (e.g. 2022-2026)" required style="flex: 1;" aria-label="Batch Name (e.g. 2022-2026)">
+                            <button type="submit" class="btn btn-primary" aria-label="button">Add Batch</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Batches List</span>
+                        <select id="batches-filter" class="form-control"
+                            style="width: auto; padding: 4px; font-size: 14px;" aria-label="batches filter">
+                            <option value="ACTIVE">Active</option>
+                            <option value="ARCHIVED">Archived</option>
+                            <option value="ALL">All</option>
+                        </select>
+                    </div>
+                    <div class="card-body">
+                        <table class="table serial-table" id="batches-crud-table">
+                            <thead>
+                                <tr>
+                                    <th>S.No</th>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center">Loading batches…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="unlock-sessions" class="card tab-content hidden">
+                <div class="card-header">Session Locking Override Control</div>
+                <div class="card-body">
+                    <div id="unlock-message" class="hidden"></div>
+                    <p class="mb-2" style="color: var(--text-secondary);">
+                        Override active hours for manually editing or recording student attendance logs. Select a date,
+                        session, and set the unlock status.
+                    </p>
+                    <form id="unlock-session-form"
+                        style="display: flex; flex-wrap: wrap; gap: var(--spacing-md); align-items: flex-end;"
+                        id="responsive-grid-unlock-form">
+                        <div class="form-group" style="flex: 1; min-width: 150px;">
+                            <label for="unlock-date">Date</label>
+                            <input type="date" id="unlock-date" class="form-control" required aria-label="unlock date">
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 150px;">
+                            <label for="unlock-session-select">Session</label>
+                            <select id="unlock-session-select" class="form-control" required aria-label="unlock session select">
+                                <option value="FN">FN</option>
+                                <option value="AN">AN</option>
+                                <option value="EN">Evening</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 150px;">
+                            <label for="unlock-teacher-select">Target Teacher (Optional)</label>
+                            <select id="unlock-teacher-select" class="form-control" aria-label="unlock teacher select">
+                                <option value="">All Teachers (Full Dept)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 130px;">
+                            <label for="unlock-duration-select">Permission Expiry</label>
+                            <select id="unlock-duration-select" class="form-control" aria-label="unlock duration select">
+                                <option value="">Full Day (No Expiry)</option>
+                                <option value="1">1 Hour</option>
+                                <option value="2">2 Hours</option>
+                                <option value="4">4 Hours</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap; margin-bottom: 2px;">
+                            <button type="button" class="btn btn-primary" onclick="window.applyLockOverride(true)" style="background: var(--success-color);" aria-label="button">Grant Permission / Reopen</button>
+                            <button type="button" class="btn btn-secondary" onclick="window.applyLockOverride(false)" aria-label="button">Lock Session</button>
+                        </div>
+                    </form>
+                    <div id="current-lock-status" style="margin-top: var(--spacing-md); padding: var(--spacing-md); border-radius: var(--border-radius-md); background: var(--bg-color);">
+                        <strong>Current Status:</strong> <span id="lock-status-badge">...</span><br>
+                        <small style="color: var(--text-secondary);">
+                            <strong>Granted By:</strong> <span id="lock-updated-by">...</span> | 
+                            <strong>Last Updated:</strong> <span id="lock-updated-time">...</span>
+                        </small>
+                    </div>
+                </div>
+            </section>
+
+            <section id="attendance-reports" class="card tab-content hidden">
+                <div class="card-header">Attendance & Reports</div>
+                <div class="card-body">
+                    <h4 style="margin-bottom: 15px; color: var(--primary-color);">Export PDF Reports</h4>
+                    <div id="export-message" class="hidden"></div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-md);" id="responsive-grid-export-reports">
+                        <div class="form-group mb-0">
+                            <label>Report Type</label>
+                            <select id="export-frequency" class="form-control" aria-label="export frequency">
+                                <option value="DAILY" selected>Daily</option>
+                                <option value="MONTHLY">Monthly</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="export-date">Date (Daily)</label>
+                            <input type="date" id="export-date" class="form-control" aria-label="export date">
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="export-session">Session</label>
+                            <select id="export-session" class="form-control" aria-label="export session">
+                                <option value="">All Sessions</option>
+                                <option value="FN">FN</option>
+                                <option value="AN">AN</option>
+                                <option value="EN">Evening</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="export-month">Month (Monthly)</label>
+                            <select id="export-month" class="form-control" aria-label="export month">
+                                <option value="1">Jan</option><option value="2">Feb</option>
+                                <option value="3">Mar</option><option value="4">Apr</option>
+                                <option value="5">May</option><option value="6">Jun</option>
+                                <option value="7">Jul</option><option value="8">Aug</option>
+                                <option value="9">Sep</option><option value="10">Oct</option>
+                                <option value="11">Nov</option><option value="12">Dec</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="export-year">Academic Year</label>
+                            <select id="export-year" class="form-control" aria-label="export year">
+                                <option value="">All Years</option>
+                                <option value="1">Year 1</option>
+                                <option value="2">Year 2</option>
+                                <option value="3">Year 3</option>
+                                <option value="4">Year 4</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label>Department</label>
+                            <select id="export-dept" class="form-control" aria-label="export dept"><option value="">All Departments</option></select>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label>Batch</label>
+                            <select id="export-batch" class="form-control" aria-label="export batch"><option value="">All Batches</option></select>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 30px;">
+                        <button id="btn-export-pdf" class="btn btn-primary" style="padding: 8px 24px;" aria-label="btn export pdf">Download PDF Report</button>
+                        <button id="btn-export-csv" class="btn btn-secondary" style="padding: 8px 24px;" aria-label="btn export csv">Export CSV</button>
+                        <button id="btn-export-excel" class="btn btn-secondary" style="padding: 8px 24px; background-color: #16a34a; color: white;" aria-label="btn export excel">Export Excel</button>
+                    </div>
+
+                    <hr style="margin: 20px 0; border-top: 1px solid #e2e8f0;">
+
+                    <h4 style="margin-bottom: 15px; color: var(--primary-color);">Attendance Logs</h4>
+                    <form id="search-filter-form"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--spacing-sm); align-items: flex-end; margin-bottom: var(--spacing-md);">
+                        <div class="form-group mb-0">
+                            <label for="search-student-name">Student Name</label>
+                            <input type="text" id="search-student-name" class="form-control"
+                                placeholder="Search name..." aria-label="Search name...">
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="search-register-number">Register Number</label>
+                            <input type="text" id="search-register-number" class="form-control"
+                                placeholder="Search register no..." aria-label="Search register no...">
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="search-dept">Department</label>
+                            <select id="search-dept" class="form-control" aria-label="search dept">
+                                <option value="">All Departments</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="search-batch">Batch</label>
+                            <select id="search-batch" class="form-control" aria-label="search batch">
+                                <option value="">All Batches</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="search-date">Date</label>
+                            <input type="date" id="search-date" class="form-control" aria-label="search date">
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="search-session">Session</label>
+                            <select id="search-session" class="form-control" aria-label="search session">
+                                <option value="">All Sessions</option>
+                                <option value="FN">FN</option>
+                                <option value="AN">AN</option>
+                                <option value="EN">Evening</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="search-evening-enabled">Evening Class Access</label>
+                            <select id="search-evening-enabled" class="form-control" aria-label="search evening enabled">
+                                <option value="">All</option>
+                                <option value="true">YES</option>
+                                <option value="false">NO</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="search-status">Status</label>
+                            <select id="search-status" class="form-control" aria-label="search status">
+                                <option value="">All Statuses</option>
+                                <option value="PRESENT">Present</option>
+                                <option value="ABSENT">Absent</option>
+                                <option value="ON_DUTY">On Duty</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0" style="flex: 0 0 auto;">
+                            <button type="submit" class="btn btn-primary" style="height: 42px;" aria-label="button">Search</button>
+                        </div>
+                    </form>
+
+                    <div class="jjcet-report-container">
+                        <div class="jjcet-report-card table-responsive">
+                            <table class="table jjcet-report-table" id="search-results-table">
+                                <thead>
+                                    <tr>
+                                        <th>S.No</th>
+                                        <th>Register Number</th>
+                                        <th>Student Name</th>
+                                        <th>Date</th>
+                                        <th>Session</th>
+                                        <th>Status</th>
+                                        <th>Marked By</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="8" class="text-center">Submit query filters to search.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="pagination-controls mt-2"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <span id="search-pagination-info" style="color: var(--text-secondary);">Page 1 of 1</span>
+                        <div style="display: flex; gap: var(--spacing-sm);">
+                            <button id="btn-search-prev" class="btn btn-primary" disabled
+                                style="padding: 6px 12px;" aria-label="btn search prev">Previous</button>
+                            <button id="btn-search-next" class="btn btn-primary" disabled
+                                style="padding: 6px 12px;" aria-label="btn search next">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="audit-logs" class="card tab-content hidden">
+                <div class="card-header">System Audit Trail</div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="audit-logs-table">
+                            <thead>
+                                <tr>
+                                    <th>S.No</th>
+                                    <th>Timestamp</th>
+                                    <th>User ID</th>
+                                    <th>Role</th>
+                                    <th>Entity</th>
+                                    <th>Action</th>
+                                    <th>IP Address</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="7" class="text-center">Loading audit logs…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination-controls mt-2"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <span id="audit-pagination-info" style="color: var(--text-secondary);">Page 1 of 1</span>
+                        <div style="display: flex; gap: var(--spacing-sm);">
+                            <button id="btn-audit-prev" class="btn btn-primary" disabled
+                                style="padding: 6px 12px;" aria-label="btn audit prev">Previous</button>
+                            <button id="btn-audit-next" class="btn btn-primary" disabled
+                                style="padding: 6px 12px;" aria-label="btn audit next">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div id="edit-student-modal" class="modal hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center;">
+        <div class="modal-content card"
+            style="background: white; padding: 20px; width: 500px; max-width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0;">Edit Student</h3>
+                <button type="button" id="close-edit-student"
+                    style="background: none; border: none; font-size: 20px; cursor: pointer;" aria-label="close edit student">&times;</button>
+            </div>
+            <div class="card-body">
+                <form id="edit-student-form">
+                    <input type="hidden" id="edit-s-id" aria-label="edit s id">
+                    <div class="form-group mt-1">
+                        <label for="edit-s-name">Full Name</label>
+                        <input type="text" id="edit-s-name" class="form-control" required aria-label="edit s name">
+                    </div>
+                    <div class="form-group mt-1">
+                        <label for="edit-s-dept">Department</label>
+                        <select id="edit-s-dept" class="form-control" required aria-label="edit s dept"></select>
+                    </div>
+                    <div class="form-group mt-1">
+                        <label for="edit-s-year">Year</label>
+                        <input type="number" id="edit-s-year" class="form-control" min="1" max="5" required aria-label="edit s year">
+                    </div>
+                    <div class="form-group mt-1">
+                        <label for="edit-s-batch">Batch</label>
+                        <select id="edit-s-batch" class="form-control" required aria-label="edit s batch"></select>
+                    </div>
+                    <div class="form-group mt-1">
+                        <label for="edit-s-type">Student Type</label>
+                        <select id="edit-s-type" class="form-control" required aria-label="edit s type">
+                            <option value="DAY_SCHOLAR">Day Scholar</option>
+                            <option value="HOSTEL">Hostel</option>
+                        </select>
+                    </div>
+                    <div class="form-group mt-1" id="edit-s-evening-group">
+                        <label for="edit-s-evening">Evening Class Access <span style="color: red;">*</span></label>
+                        <select id="edit-s-evening" class="form-control" required aria-label="edit s evening">
+                            <option value="NO">NO</option>
+                            <option value="YES">YES</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2" aria-label="button">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-teacher-modal" class="modal hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center;">
+        <div class="modal-content card" style="background: white; padding: 20px; width: 500px; max-width: 90%;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0;">Edit Teacher</h3>
+                <button type="button" id="close-edit-teacher"
+                    style="background: none; border: none; font-size: 20px; cursor: pointer;" aria-label="close edit teacher">&times;</button>
+            </div>
+            <div class="card-body">
+                <form id="edit-teacher-form">
+                    <input type="hidden" id="edit-t-id" aria-label="edit t id">
+                    <div class="form-group mt-1">
+                        <label for="edit-t-name">Full Name</label>
+                        <input type="text" id="edit-t-name" class="form-control" required aria-label="edit t name">
+                    </div>
+                    <div class="form-group mt-1">
+                        <label for="edit-t-email">Official Email ID</label>
+                        <input type="email" id="edit-t-email" class="form-control" required aria-label="edit t email">
+                    </div>
+                    <div class="form-group mt-1">
+                        <label for="edit-t-empid">Employee ID</label>
+                        <input type="text" id="edit-t-empid" class="form-control" required aria-label="edit t empid">
+                    </div>
+                    <div class="form-group mt-1">
+                        <label for="edit-t-department">Department</label>
+                        <select id="edit-t-department" class="form-control" aria-label="edit t department">
+                            <option value="">No department yet</option>
+                        </select>
+                    </div>
+                    <div class="form-group mt-1">
+                        <label for="edit-t-access-type">Access Role</label>
+                        <select id="edit-t-access-type" class="form-control" required aria-label="edit t access type">
+                            <option value="TEACHER">TEACHER</option>
+                            <option value="ADMIN">ADMIN</option>
+                        </select>
+                    </div>
+                    <div class="form-group mt-1">
+                        <label for="edit-t-department">Department / Designation</label>
+                        <input type="text" id="edit-t-department" class="form-control" placeholder="Optional" aria-label="Optional">
+                    </div>
+                    <div class="form-group mt-1">
+                        <label for="edit-t-status">Account Status</label>
+                        <select id="edit-t-status" class="form-control" required aria-label="edit t status">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive / Disabled</option>
+                        </select>
+                    </div>
+                    
+                    <div style="background: #f8fafc; padding: 10px; border-radius: 4px; font-size: 12px; color: var(--text-secondary); margin-top: 15px; margin-bottom: 10px;">
+                        <div><strong>Created:</strong> <span id="edit-t-created">N/A</span></div>
+                        <div><strong>Updated:</strong> <span id="edit-t-updated">N/A</span></div>
+                        <div><strong>Last Login:</strong> <span id="edit-t-lastlogin">N/A</span></div>
+                    </div>
+
+                      <div class="form-group mt-1" style="position: relative;">
+                          <label for="edit-t-password">Reset Password (Optional)</label>
+                          <div class="password-input-wrapper" style="position: relative; display: flex; align-items: center;">
+                              <input type="password" id="edit-t-password" class="form-control" placeholder="Leave blank to keep current password" style="padding-right: 40px; width: 100%;" aria-label="Leave blank to keep current password">
+                              <button type="button" id="toggle-edit-t-password" class="btn-icon" aria-label="Toggle password visibility" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; padding: 0;">
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width: 20px; height: 20px;">
+                                      <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+                                      <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clip-rule="evenodd" />
+                                  </svg>
+                              </button>
+                          </div>
+                        <div class="password-strength-meter mt-1">
+                            <div id="edit-pwd-strength-bar" style="height: 4px; width: 0%; background-color: #ccc; transition: all 0.3s;"></div>
+                            <small id="edit-pwd-strength-text" style="color: var(--text-secondary); font-size: 11px; display: block; margin-top: 4px;">Minimum 12 chars (Upper, Lower, Number, Special)</small>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2" aria-label="button">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div id="manage-role-modal" class="modal hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center;">
+        <div class="modal-content card" style="background: white; padding: 20px; width: 500px; max-width: 90%;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px;">
+                <h3 style="margin: 0;">Manage Teacher Role</h3>
+                <button type="button" id="close-manage-role" style="background: none; border: none; font-size: 20px; cursor: pointer;" aria-label="close manage role modal">&times;</button>
+            </div>
+            <div class="card-body">
+                <form id="manage-role-form">
+                    <input type="hidden" id="manage-role-userId">
+                    <div class="form-group mt-1">
+                        <label for="manage-role-select">Access</label>
+                        <select id="manage-role-select" class="form-control" required aria-label="manage role select">
+                            <option value="TEACHER">Teacher</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2" aria-label="button">Update Role</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="error-modal" class="modal hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center;">
+        <div class="modal-content card" style="background: white; padding: 20px; width: 500px; max-width: 90%;">
+            <div class="card-header"
+                style="display: flex; justify-content: space-between; align-items: center; background-color: var(--error-color); color: white; padding: 15px;">
+                <h3 style="margin: 0; color: white;">Action Blocked</h3>
+                <button type="button" id="close-error-modal"
+                    style="background: none; border: none; font-size: 20px; cursor: pointer; color: white;" aria-label="close error modal">&times;</button>
+            </div>
+            <div class="card-body">
+                <p id="error-modal-message" style="margin-top: 10px; color: var(--error-color); font-weight: 500;"></p>
+                <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                    <button id="btn-ok-error" class="btn btn-primary"
+                        style="background: var(--error-color);" aria-label="btn ok error">Understood</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/admin.js"></script>
+</body>
+
+</html>
+

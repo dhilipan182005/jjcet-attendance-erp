@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - JJCET ERP</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script type="module">
+        import { checkAuthorization, validateSession } from './js/authGuard.js';
+        checkAuthorization(['TEACHER']);
+        validateSession();
+    </script>
+</head>
+<body class="dashboard-layout">
+
+    <header class="dashboard-header">
+        <div class="header-brand">JJCET Teacher Portal</div>
+        <div class="header-nav">
+            <span class="user-info" id="user-info-display"></span>
+            <button class="btn-logout" id="btn-logout" aria-label="btn logout">Logout</button>
+        </div>
+    </header>
+
+    <div class="dashboard-body">
+        
+        <main class="dashboard-content">
+            <h1 class="page-title" id="page-title-text">Attendance Management</h1>
+
+            
+            <div class="card" id="teacher-session-panel" style="margin-bottom: var(--spacing-lg);">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-sm);">
+                    <span>Attendance Session Controller — <span id="teacher-dept-name">Loading Department...</span></span>
+                    <span id="current-time-display" style="font-weight: 500; font-family: monospace; color: var(--text-secondary);"></span>
+                </div>
+                <div class="card-body">
+                    
+                    <div id="timing-warning" class="hidden" style="background-color: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: var(--spacing-md); border-radius: var(--border-radius); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <svg style="width: 24px; height: 24px; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        <div>
+                            <strong>Outside Allowed Session Hours:</strong> You cannot load or mark attendance at this time. Operations will automatically unlock during valid session hours.
+                        </div>
+                    </div>
+
+                    <div class="session-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+                        
+                        <div class="session-card" id="card-FN" style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: var(--spacing-md); display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
+                                    <h4 style="margin: 0; font-size: 16px; color: var(--text-primary);">Morning Session</h4>
+                                    <span style="font-weight: bold; font-size: 14px; color: var(--text-secondary);">FN</span>
+                                </div>
+                                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: var(--spacing-md);">09:00 AM - 10:30 AM</div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="badge" id="badge-FN-status" style="padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; text-transform: uppercase;">Closed</span>
+                                <span id="badge-FN-detail" style="font-size: 12px; color: var(--text-secondary);"></span>
+                            </div>
+                        </div>
+
+                        
+                        <div class="session-card" id="card-AN" style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: var(--spacing-md); display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
+                                    <h4 style="margin: 0; font-size: 16px; color: var(--text-primary);">Afternoon Session</h4>
+                                    <span style="font-weight: bold; font-size: 14px; color: var(--text-secondary);">AN</span>
+                                </div>
+                                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: var(--spacing-md);">01:00 PM - 02:00 PM</div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="badge" id="badge-AN-status" style="padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; text-transform: uppercase;">Closed</span>
+                                <span id="badge-AN-detail" style="font-size: 12px; color: var(--text-secondary);"></span>
+                            </div>
+                        </div>
+
+                        
+                        <div class="session-card" id="card-EN" style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: var(--spacing-md); display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
+                                    <h4 style="margin: 0; font-size: 16px; color: var(--text-primary);">Evening Session</h4>
+                                    <span style="font-weight: bold; font-size: 14px; color: var(--text-secondary);">EN</span>
+                                </div>
+                                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: var(--spacing-md);">05:00 PM - 07:30 PM</div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="badge" id="badge-EN-status" style="padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; text-transform: uppercase;">Closed</span>
+                                <span id="badge-EN-detail" style="font-size: 12px; color: var(--text-secondary);"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                </div>
+            </div>
+
+            
+            <div class="card" id="teacher-export-panel" style="margin-bottom: var(--spacing-lg);">
+                <div class="card-header">Export Department Records</div>
+                <div class="card-body">
+                    <div id="export-message" class="hidden"></div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-md);" id="responsive-grid-export-reports">
+                        <div class="form-group mb-0">
+                            <label>Report Type</label>
+                            <select id="export-frequency" class="form-control" aria-label="export frequency">
+                                <option value="DAILY">Daily</option>
+                                <option value="MONTHLY" selected>Monthly</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="export-date">Date (Daily)</label>
+                            <input type="date" id="export-date" class="form-control" aria-label="export date">
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="export-month">Month (Monthly)</label>
+                            <select id="export-month" class="form-control" aria-label="export month">
+                                <option value="1">Jan</option><option value="2">Feb</option>
+                                <option value="3">Mar</option><option value="4">Apr</option>
+                                <option value="5">May</option><option value="6">Jun</option>
+                                <option value="7">Jul</option><option value="8">Aug</option>
+                                <option value="9">Sep</option><option value="10">Oct</option>
+                                <option value="11">Nov</option><option value="12">Dec</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="export-year">Year</label>
+                            <select id="export-year" class="form-control" aria-label="export year">
+                                <option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label>Department</label>
+                            <select id="export-dept" class="form-control" disabled aria-label="export dept"><option value="">Loading...</option></select>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button id="btn-export-pdf" class="btn btn-secondary" style="padding: 8px 24px;" aria-label="btn export pdf">Download PDF Report</button>
+                    </div>
+                </div>
+            </div>
+
+            <section id="attendance-grid" class="card">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-sm);">
+                    <span>Mark Student Attendance</span>
+                    <div style="display: flex; gap: var(--spacing-sm);">
+                        <button type="button" id="btn-all-absent" class="btn" style="background-color: var(--error-color); color: white; padding: 6px 12px; font-size: 13px;" aria-label="btn all absent">Mark All Absent</button>
+                        <button type="button" id="btn-reset-grid" class="btn" style="background-color: #64748b; color: white; padding: 6px 12px; font-size: 13px;" aria-label="btn reset grid">Reset</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="grid-message" class="hidden"></div>
+                    
+                    <div style="background: var(--bg-color); padding: var(--spacing-md); border-radius: 8px; margin-bottom: var(--spacing-md);">
+                        <form id="grid-filter-form" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md); margin-bottom: 0;">
+                            <div class="form-group mb-0">
+                                <label for="grid-date">Date</label>
+                                <input type="date" id="grid-date" class="form-control" required aria-label="grid date">
+                            </div>
+                            
+                            <div class="form-group mb-0">
+                                <label for="grid-dept">Department</label>
+                                <select id="grid-dept" class="form-control" disabled aria-label="grid dept">
+                                    <option value="">Loading...</option>
+                                </select>
+                            </div>
+                            <div class="form-group mb-0">
+                                <label for="grid-batch">Training Batch</label>
+                                <select id="grid-batch" class="form-control" aria-label="grid batch">
+                                    <option value="">All Batches</option>
+                                    
+                                </select>
+                            </div>
+                            <div class="form-group mb-0">
+                                <label for="grid-year">Academic Year</label>
+                                <select id="grid-year" class="form-control" aria-label="grid year">
+                                    <option value="">All Years</option>
+                                    <option value="1">Year 1</option>
+                                    <option value="2">Year 2</option>
+                                    <option value="3">Year 3</option>
+                                    <option value="4">Year 4</option>
+                                </select>
+                            </div>
+                            <div class="form-group mb-0">
+                                <label for="grid-search">Search Name / Register No</label>
+                                <input type="text" id="grid-search" class="form-control" placeholder="Search..." aria-label="Search...">
+                            </div>
+                        </form>
+                    </div>
+
+                    </div>
+
+                    
+                    <div id="grid-stats-summary" style="display: flex; gap: var(--spacing-md); background: #f8fafc; border: 1px solid var(--border-color); padding: 10px 16px; border-radius: 6px; margin-bottom: var(--spacing-md); font-size: 14px; flex-wrap: wrap;">
+                        <span>Loaded: <strong id="summary-total">0</strong></span>
+                        <span style="color: var(--success-color);">Present: <strong id="summary-present">0</strong></span>
+                        <span style="color: var(--error-color);">Absent: <strong id="summary-absent">0</strong></span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table" id="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Register No</th>
+                                    <th>Name</th>
+                                    <th>Details</th>
+                                    <th>Type</th>
+                                    <th style="text-align: center;">Attendance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-cards-grid">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: var(--spacing-xl); color: var(--text-secondary);">
+                                        Use the filter controls above to load students.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; margin-top: var(--spacing-md);">
+                        <button type="button" id="btn-save-attendance" class="btn btn-primary btn-lg" style="padding: 12px 30px; font-size: 16px; font-weight: bold;" aria-label="btn save attendance">MARK ATTEND</button>
+                    </div>
+                </div>
+            </section>
+
+
+
+
+
+        </main>
+    </div>
+
+    
+    <div id="markattend-modal" class="modal hidden"
+        style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:2000;display:none;align-items:center;justify-content:center;">
+        <div style="background:white;padding:32px;border-radius:2px;width:440px;max-width:92%;box-shadow:none;border: 1px solid #1e3a5f;">
+            <h3 style="margin:0 0 12px;color:#1e3a5f;font-size:18px;">Confirm Attendance Submission</h3>
+            <p style="color:#64748b;margin-bottom:20px;font-size:14px;line-height:1.6;">
+                You are about to save attendance records. Type <strong>MARKATTEND</strong> to confirm.
+            </p>
+            <input type="text" id="markattend-input" class="form-control" placeholder="Type MARKATTEND here"
+                style="margin-bottom:16px;font-size:15px;letter-spacing:1px;" autocomplete="off" aria-label="Type MARKATTEND here">
+            <div style="display:flex;gap:12px;justify-content:flex-end;">
+                <button id="btn-markattend-cancel" class="btn" type="button"
+                    style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;padding:10px 20px;" aria-label="btn markattend cancel">
+                    Cancel
+                </button>
+                <button id="btn-markattend-confirm" class="btn btn-primary" type="button" disabled
+                    style="padding:10px 24px;background:#c62828;border-color:#c62828;" aria-label="btn markattend confirm">
+                    Confirm & Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/teacher.js"></script>
+</body>
+</html>
+
+
